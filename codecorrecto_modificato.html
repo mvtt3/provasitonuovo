@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Quiz Interattivo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f0f0;
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        .question {
+            margin-bottom: 20px;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        button {
+            padding: 10px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        button.secondary {
+            background-color: #6c757d;
+        }
+
+        button.secondary:hover {
+            background-color: #545b62;
+        }
+
+        .timer {
+            margin-top: 10px;
+            font-size: 1.2em;
+            color: #ff0000;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .fade-in {
+            animation: fadeIn 1s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .dark-mode {
+            background-color: #222;
+            color: #f0f0f0;
+        }
+
+        .dark-mode .container {
+            background-color: #333;
+            color: #f0f0f0;
+        }
+
+        .auth-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .nickname-setup {
+            margin: 20px 0;
+        }
+
+        .nickname-setup input {
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 80%;
+            max-width: 300px;
+        }
+
+        .warning-text {
+            color: #dc3545;
+            font-size: 0.9em;
+            margin: 10px 0;
+        }
+
+        #user-info {
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #e9ecef;
+            border-radius: 5px;
+        }
+
+        .leaderboard {
+            margin-top: 20px;
+            text-align: left;
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+
+        .leaderboard h2 {
+            text-align: center;
+            margin-top: 0;
+        }
+
+        .leaderboard ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .leaderboard li {
+            padding: 8px;
+            margin: 5px 0;
+            background-color: white;
+            border-radius: 5px;
+            border-left: 4px solid #007BFF;
+        }
+
+        .account-selector {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #e9ecef;
+            border-radius: 8px;
+        }
+
+        .account-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .account-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px;
+            background-color: white;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        .account-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .account-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Quiz Interattivo</h1>
+        <!-- Schermata di autenticazione -->
+        <div id="auth-screen">
+            <div class="auth-buttons">
+                <button id="register-button">Registrati</button>
+                <button class="secondary" id="login-button">Accedi</button>
+            </div>
+        </div>
+
+        <!-- Selettore account -->
+        <div class="hidden" id="account-selector">
+            <h2>Seleziona Account</h2>
+            <div class="account-selector">
+                <p>Seleziona un account Google:</p>
+                <button id="add-account-button">Aggiungi nuovo account Google</button>
+                <div class="account-list" id="account-list"></div>
+                <button class="secondary" id="back-from-selector">Indietro</button>
+            </div>
+        </div>
+
+        <!-- Schermata di registrazione -->
+        <div class="hidden" id="register-screen">
+            <h2>Registrazione</h2>
+            <div class="nickname-setup">
+                <input id="register-nickname" placeholder="Scegli il tuo nickname" type="text"/>
+                <div class="warning-text">⚠️ Non potrai più cambiare il nickname dopo la registrazione</div>
+                <button id="confirm-register">Conferma Registrazione</button>
+                <button class="secondary" id="back-to-auth">Indietro</button>
+            </div>
+        </div>
+
+        <!-- Schermata di accesso -->
+        <div class="hidden" id="login-screen">
+            <h2>Accedi</h2>
+            <button id="google-login">Accedi con Google</button>
+            <button class="secondary" id="back-to-auth-login">Indietro</button>
+        </div>
+
+        <!-- Schermata principale del quiz -->
+        <div class="hidden" id="start-screen">
+            <div id="user-info"></div>
+            <button id="start-button">Inizia Quiz</button>
+            <button class="secondary" id="logout-button">Logout</button>
+
+            <!-- Classifica sempre visibile nella schermata principale -->
+            <div class="leaderboard" id="leaderboard">
+                <h2>🏆 Classifica Globale</h2>
+                <ul id="leaderboard-list">
+                    <li>Caricamento classifica...</li>
+                </ul>
+                <button class="secondary" id="reset-leaderboard-button">Resetta Classifica (Admin)</button>
+            </div>
+        </div>
+
+        <!-- Schermata del quiz -->
+        <div class="hidden" id="quiz-screen">
+            <div class="question" id="question"></div>
+            <div class="options" id="options"></div>
+            <div class="timer" id="timer">Tempo rimanente: <span id="time">15</span>s</div>
+        </div>
+
+        <!-- Schermata finale -->
+        <div class="hidden" id="end-screen">
+            <h2>Quiz Completato!</h2>
+            <p id="score">Punteggio: <span id="score-value">0</span></p>
+            <p id="time-taken">Tempo impiegato: <span id="time-taken-value">0</span>s</p>
+            <p id="message"></p>
+            <button id="restart-button">Ricomincia Quiz</button>
+            <button id="back-to-start">Torna al Menu</button>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script>
+        // Configurazione Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyCdZbRpxIZZiUY4GgRrCza5ejxtFiDVyAc",
+            authDomain: "quiz-33f1c.firebaseapp.com",
+            databaseURL: "https://quiz-33f1c-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "quiz-33f1c",
+            storageBucket: "quiz-33f1c.appspot.com",
+            messagingSenderId: "540883400502",
+            appId: "1:540883400502:web:6944d0ba56f9e0baf5e597",
+            measurementId: "G-05WYSVNRHK"
+        };
+
+        // Inizializza Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // Configura il provider di accesso Google
+        const googleProvider = new firebase.auth.GoogleAuthProvider();
+        // Forza sempre la selezione dell'account
+        googleProvider.setCustomParameters({
+            prompt: 'select_account'
+        });
+
+        // Elementi DOM
+        const authScreen = document.getElementById("auth-screen");
+        const accountSelector = document.getElementById("account-selector");
+        const registerScreen = document.getElementById("register-screen");
+        const loginScreen = document.getElementById("login-screen");
+        const startScreen = document.getElementById("start-screen");
+        const quizScreen = document.getElementById("quiz-screen");
+        const endScreen = document.getElementById("end-screen");
+        const leaderboard = document.getElementById("leaderboard");
+
+        // Bottoni
+        const registerButton = document.getElementById("register-button");
+        const loginButton = document.getElementById("login-button");
+        const addAccountButton = document.getElementById("add-account-button");
+        const backFromSelectorButton = document.getElementById("back-from-selector");
+        const confirmRegisterButton = document.getElementById("confirm-register");
+        const googleLoginButton = document.getElementById("google-login");
+        const backToAuthButton = document.getElementById("back-to-auth");
+        const backToAuthLoginButton = document.getElementById("back-to-auth-login");
+        const startQuizButton = document.getElementById("start-button");
+        const restartButton = document.getElementById("restart-button");
+        const backToStartButton = document.getElementById("back-to-start");
+        const logoutButton = document.getElementById("logout-button");
+        const resetLeaderboardButton = document.getElementById("reset-leaderboard-button");
+
+        // Domande del quiz
+        const questions = [
+            {
+                question: "Qual è la capitale della Francia?",
+                options: ["Londra", "Parigi", "Berlino", "Madrid"],
+                answer: "Parigi"
+            },
+            {
+                question: "Qual è il fiume più lungo del mondo?",
+                options: ["Nilo", "Amazzonia", "Yangtze", "Mississippi"],
+                answer: "Amazzonia"
+            },
+            {
+                question: "Chi ha scritto 'Romeo e Giulietta'?",
+                options: ["Charles Dickens", "William Shakespeare", "Jane Austen", "Mark Twain"],
+                answer: "William Shakespeare"
+            },
+            {
+                question: "Qual è il pianeta più grande del sistema solare?",
+                options: ["Terra", "Marte", "Giove", "Saturno"],
+                answer: "Giove"
+            },
+            {
+                question: "Qual è l'elemento chimico con simbolo 'O'?",
+                options: ["Oro", "Osmio", "Ossigeno", "Ottanio"],
+                answer: "Ossigeno"
+            }
+        ];
+
+        // Variabili globali
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let timeLeft = 15;
+        let timer;
+        let startTime;
+        let endTime;
+        let currentUser = null;
+        let userNickname = "";
+        let isRegistering = false;
+        let pendingNickname = "";
+
+        // Event listeners
+        registerButton.addEventListener("click", showAccountSelector);
+        loginButton.addEventListener("click", showLoginScreen);
+        addAccountButton.addEventListener("click", handleGoogleAuth);
+        backFromSelectorButton.addEventListener("click", showAuthScreen);
+        backToAuthButton.addEventListener("click", showAuthScreen);
+        backToAuthLoginButton.addEventListener("click", showAuthScreen);
+        confirmRegisterButton.addEventListener("click", confirmRegistration);
+        googleLoginButton.addEventListener("click", handleLogin);
+        startQuizButton.addEventListener("click", startQuiz);
+        restartButton.addEventListener("click", restartQuiz);
+        backToStartButton.addEventListener("click", showStartScreen);
+        logoutButton.addEventListener("click", handleLogout);
+        resetLeaderboardButton.addEventListener("click", resetLeaderboard);
+
+        // Monitora lo stato di autenticazione
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                currentUser = user;
+                if (isRegistering) {
+                    handleRegistrationFlow();
+                } else {
+                    checkUserProfile();
+                }
+            } else {
+                currentUser = null;
+                if (!authScreen.classList.contains("hidden")) {
+                    showAuthScreen();
+                }
+            }
+        });
+
+        // Funzioni di navigazione
+        function showAuthScreen() {
+            hideAllScreens();
+            authScreen.classList.remove("hidden");
+            isRegistering = false;
+            pendingNickname = "";
+        }
+
+        function showAccountSelector() {
+            hideAllScreens();
+            accountSelector.classList.remove("hidden");
+            isRegistering = true;
+        }
+
+        function showRegisterScreen() {
+            hideAllScreens();
+            registerScreen.classList.remove("hidden");
+        }
+
+        function showLoginScreen() {
+            hideAllScreens();
+            loginScreen.classList.remove("hidden");
+        }
+
+        function showStartScreen() {
+    console.log(\"Torno al menu principale\");
+            hideAllScreens();
+            startScreen.classList.remove("hidden");
+            loadLeaderboard();
+            updateUserInfo();
+        }
+
+        function hideAllScreens() {
+            authScreen.classList.add("hidden");
+            accountSelector.classList.add("hidden");
+            registerScreen.classList.add("hidden");
+            loginScreen.classList.add("hidden");
+            startScreen.classList.add("hidden");
+            quizScreen.classList.add("hidden");
+            endScreen.classList.add("hidden");
+        }
+
+        // Gestione autenticazione Google
+        async function handleGoogleAuth() {
+            try {
+                console.log("Avvio autenticazione Google...");
+
+                // Forza il logout per permettere la selezione dell'account
+                if (currentUser) {
+                    await auth.signOut();
+                }
+
+                const result = await auth.signInWithPopup(googleProvider);
+                console.log("Autenticazione Google completata per:", result.user.email);
+                // Il resto della logica viene gestita da onAuthStateChanged
+            } catch (error) {
+                console.error("ERRORE durante l'autenticazione Google:", error);
+                handleAuthError(error);
+            }
+        }
+
+        // Gestione flusso di registrazione
+        async function handleRegistrationFlow() {
+            try {
+                // Controlla se l'utente esiste già
+                const userDoc = await db.collection("users").doc(currentUser.uid).get();
+                if (userDoc.exists) {
+                    alert("Questo account Google è già registrato. Ti reindirizziamo alla pagina di accesso.");
+                    isRegistering = false;
+                    await auth.signOut();
+                    showLoginScreen();
+                    return;
+                }
+
+                // Mostra la schermata di registrazione
+                showRegisterScreen();
+            } catch (error) {
+                console.error("Errore nel controllo della registrazione:", error);
+                alert("Errore durante la registrazione.");
+                await auth.signOut();
+                showAuthScreen();
+            }
+        }
+
+        // Conferma registrazione
+        async function confirmRegistration() {
+            const nickname = document.getElementById("register-nickname").value.trim();
+            if (!nickname) {
+                alert("Inserisci un nickname!");
+                return;
+            }
+
+            try {
+                // Controlla se il nickname è già utilizzato
+                console.log("Controllo nickname duplicato...");
+                const nicknameQuery = await db.collection("users").where("nickname", "==", nickname).get();
+                if (!nicknameQuery.empty) {
+                    alert("Questo nickname è già utilizzato. Scegline un altro.");
+                    return;
+                }
+
+                // Salva il profilo utente
+                console.log("Salvataggio profilo utente...");
+                await db.collection("users").doc(currentUser.uid).set({
+                    nickname: nickname,
+                    email: currentUser.email,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                console.log("Profilo utente salvato con successo");
+
+                userNickname = nickname;
+                isRegistering = false;
+                showStartScreen();
+            } catch (error) {
+                console.error("Errore nel completamento della registrazione:", error);
+                alert("Errore nel completamento della registrazione.");
+            }
+        }
+
+        // Gestione accesso
+        async function handleLogin() {
+            try {
+                console.log("Avvio login Google...");
+
+                // Forza il logout per permettere la selezione dell'account
+                if (currentUser) {
+                    await auth.signOut();
+                }
+
+                const result = await auth.signInWithPopup(googleProvider);
+                console.log("Login Google completato per:", result.user.email);
+                // checkUserProfile verrà chiamato automaticamente da onAuthStateChanged
+            } catch (error) {
+                console.error("ERRORE durante l'accesso:", error);
+                handleAuthError(error);
+            }
+        }
+
+        // Gestione errori di autenticazione
+        function handleAuthError(error) {
+            let errorMessage = "Errore durante l'autenticazione: ";
+            if (error.code === 'auth/popup-closed-by-user') {
+                errorMessage = "Autenticazione annullata dall'utente.";
+            } else if (error.code === 'auth/popup-blocked') {
+                errorMessage = "Popup bloccato dal browser. Permetti i popup per questo sito.";
+            } else if (error.code === 'auth/cancelled-popup-request') {
+                errorMessage = "Richiesta popup annullata.";
+            } else {
+                errorMessage += error.message || "Errore sconosciuto";
+            }
+            alert(errorMessage);
+        }
+
+        // Controlla il profilo utente
+        async function checkUserProfile() {
+            try {
+                const userDoc = await db.collection("users").doc(currentUser.uid).get();
+                if (userDoc.exists) {
+                    userNickname = userDoc.data().nickname;
+                    showStartScreen();
+                } else {
+                    alert("Account non trovato. Effettua prima la registrazione.");
+                    handleLogout();
+                }
+            } catch (error) {
+                console.error("Errore nel controllo del profilo:", error);
+                alert("Errore nel caricamento del profilo.");
+                handleLogout();
+            }
+        }
+
+        // Logout
+        async function handleLogout() {
+            try {
+                await auth.signOut();
+                userNickname = "";
+                isRegistering = false;
+                showAuthScreen();
+            } catch (error) {
+                console.error("Errore durante il logout:", error);
+            }
+        }
+
+        // Aggiorna info utente
+        function updateUserInfo() {
+            const userInfo = document.getElementById("user-info");
+            userInfo.innerHTML = `Benvenuto, <strong>${userNickname}</strong>!`;
+        }
+
+        // Funzioni del quiz
+        function startQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            startTime = new Date();
+            hideAllScreens();
+            quizScreen.classList.remove("hidden");
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            const question = questions[currentQuestionIndex];
+            document.getElementById("question").textContent = `Domanda ${currentQuestionIndex + 1}/${questions.length}: ${question.question}`;
+            const optionsElement = document.getElementById("options");
+            optionsElement.innerHTML = "";
+
+            question.options.forEach(option => {
+                const button = document.createElement("button");
+                button.textContent = option;
+                button.addEventListener("click", () => selectOption(option));
+                optionsElement.appendChild(button);
+            });
+
+            startTimer();
+            quizScreen.classList.add("fade-in");
+        }
+
+        function selectOption(selectedOption) {
+            clearInterval(timer);
+            const question = questions[currentQuestionIndex];
+            if (selectedOption === question.answer) {
+                score++;
+            }
+            nextQuestion();
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                setTimeout(() => {
+                    quizScreen.classList.remove("fade-in");
+                    void quizScreen.offsetWidth; // Trigger reflow
+                    loadQuestion();
+                }, 1000);
+            } else {
+                endQuiz();
+            }
+        }
+
+        function startTimer() {
+            timeLeft = 15;
+            document.getElementById("time").textContent = timeLeft;
+            timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById("time").textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    nextQuestion();
+                }
+            }, 1000);
+        }
+
+        function endQuiz() {
+    clearInterval(timer);
+    endTime = new Date();
+            const timeTaken = Math.floor((endTime - startTime) / 1000);
+
+            hideAllScreens();
+            endScreen.classList.remove("hidden");
+
+            document.getElementById("score-value").textContent = score;
+            document.getElementById("time-taken-value").textContent = timeTaken;
+            document.getElementById("message").textContent = getResultMessage(score);
+
+            saveScore(userNickname, score, timeTaken);
+        }
+
+        function restartQuiz() {
+            startQuiz();
+        }
+
+        function getResultMessage(score) {
+            if (score === questions.length) {
+                return "🎉 Perfetto! Hai risposto correttamente a tutte le domande!";
+            } else if (score >= questions.length / 2) {
+                return "👏 Bravo! Hai superato la metà delle domande!";
+            } else {
+                return "💪 Puoi fare meglio! Prova di nuovo!";
+            }
+        }
+
+        // Salva punteggio
+        async function saveScore(nickname, score, timeTaken) {
+            try {
+                await db.collection("scores").add({
+                    userId: currentUser.uid,
+                    nickname: nickname,
+                    score: score,
+                    timeTaken: timeTaken,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                console.log("Punteggio salvato con successo");
+                // Ricarica la classifica dopo aver salvato il punteggio
+                loadLeaderboard();
+            } catch (error) {
+                console.error("Errore nel salvare il punteggio:", error);
+            }
+        }
+
+        // Carica classifica
+        async function loadLeaderboard() {
+            const leaderboardList = document.getElementById("leaderboard-list");
+
+            try {
+                console.log("Caricamento classifica...");
+
+                // Prima prova con una query più semplice
+                const snapshot = await db.collection("scores")
+                    .orderBy("score", "desc")
+                    .limit(10)
+                    .get();
+
+                console.log("Query eseguita, documenti trovati:", snapshot.size);
+                leaderboardList.innerHTML = "";
+
+                if (snapshot.empty) {
+                    leaderboardList.innerHTML = "<li>Nessun punteggio ancora registrato</li>";
+                    return;
+                }
+
+                // Ordina manualmente per timeTaken come secondo criterio
+                const scores = [];
+                snapshot.forEach((doc) => {
+                    scores.push({
+                        ...doc.data(),
+                        id: doc.id
+                    });
+                });
+
+                // Ordina per punteggio (desc) e poi per tempo (asc)
+                scores.sort((a, b) => {
+                    if (b.score !== a.score) {
+                        return b.score - a.score;
+                    }
+                    return a.timeTaken - b.timeTaken;
+                });
+
+                scores.forEach((data, index) => {
+                    const li = document.createElement("li");
+                    const medal = index < 3 ? ["🥇", "🥈", "🥉"][index] : `${index + 1}.`;
+                    li.textContent = `${medal} ${data.nickname}: ${data.score}/${questions.length} punti (${data.timeTaken}s)`;
+                    leaderboardList.appendChild(li);
+                });
+
+                console.log("Classifica caricata con successo");
+            } catch (error) {
+                console.error("Errore dettagliato nel caricamento della classifica:", error);
+                leaderboardList.innerHTML = `<li>Errore nel caricamento: ${error.message}</li>`;
+
+                // Prova con una query ancora più semplice se la prima fallisce
+                try {
+                    console.log("Tentativo con query semplificata...");
+                    const simpleSnapshot = await db.collection("scores").limit(10).get();
+
+                    if (!simpleSnapshot.empty) {
+                        leaderboardList.innerHTML = "";
+                        const simpleScores = [];
+
+                        simpleSnapshot.forEach((doc) => {
+                            simpleScores.push(doc.data());
+                        });
+
+                        simpleScores.sort((a, b) => b.score - a.score);
+
+                        simpleScores.forEach((data, index) => {
+                            const li = document.createElement("li");
+                            const medal = index < 3 ? ["🥇", "🥈", "🥉"][index] : `${index + 1}.`;
+                            li.textContent = `${medal} ${data.nickname}: ${data.score}/${questions.length} punti (${data.timeTaken}s)`;
+                            leaderboardList.appendChild(li);
+                        });
+
+                        console.log("Classifica caricata con query semplificata");
+                    }
+                } catch (simpleError) {
+                    console.error("Errore anche con query semplificata:", simpleError);
+                    leaderboardList.innerHTML = "<li>Impossibile caricare la classifica. Controlla le regole di Firestore.</li>";
+                }
+            }
+        }
+
+        // Resetta classifica (solo per admin)
+        async function resetLeaderboard() {
+            if (!confirm("Sei sicuro di voler resettare la classifica? Questa azione non può essere annullata.")) {
+                return;
+            }
+
+            try {
+                const snapshot = await db.collection("scores").get();
+                const batch = db.batch();
+
+                snapshot.docs.forEach((doc) => {
+                    batch.delete(doc.ref);
+                });
+
+                await batch.commit();
+                loadLeaderboard();
+                alert("Classifica resettata con successo!");
+            } catch (error) {
+                console.error("Errore nel reset della classifica:", error);
+                alert("Errore nel reset della classifica.");
+            }
+        }
+
+        // Carica la classifica all'avvio
+        document.addEventListener('DOMContentLoaded', () => {
+            loadLeaderboard();
+        });
+    </script>
+</body>
+</html>
